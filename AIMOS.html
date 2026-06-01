@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIMOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;
+  --bg2:#111118;
+  --bg3:#1a1a24;
+  --border:#2a2a3a;
+  --border2:#3a3a4e;
+  --text:#e8e6f0;
+  --text2:#8a8aa0;
+  --text3:#4a4a60;
+  --gold:#c9a84c;
+  --gold2:#f0c060;
+  --gold-bg:rgba(201,168,76,0.08);
+  --gold-border:rgba(201,168,76,0.25);
+  --blue:#4488ff;
+  --blue-bg:rgba(68,136,255,0.08);
+  --green:#44cc88;
+  --green-bg:rgba(68,204,136,0.08);
+  --red:#ff4466;
+  --red-bg:rgba(255,68,102,0.08);
+  --amber:#ffaa44;
+  --amber-bg:rgba(255,170,68,0.08);
+  --radius:8px;
+  --radius-lg:12px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden}
+code,input,textarea,.mono{font-family:'DM Mono',monospace}
+
+/* ── AUTH SCREEN ── */
+#auth{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;position:relative}
+#auth::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(201,168,76,0.06) 0%,transparent 70%);pointer-events:none}
+.auth-logo{font-size:11px;letter-spacing:.3em;color:var(--text3);text-transform:uppercase;margin-bottom:2.5rem;font-family:'DM Mono',monospace}
+.auth-title{font-size:2.5rem;font-weight:700;color:var(--text);letter-spacing:-.02em;margin-bottom:.25rem}
+.auth-sub{font-size:13px;color:var(--text2);margin-bottom:3rem;font-family:'DM Mono',monospace}
+.auth-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.5rem;width:100%;max-width:380px}
+.auth-step{display:none}.auth-step.on{display:block}
+.auth-label{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--text2);font-family:'DM Mono',monospace;margin-bottom:1rem}
+.pin-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem}
+.pin-cell{aspect-ratio:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--gold);font-family:'DM Mono',monospace;transition:all .15s}
+.pin-cell.filled{border-color:var(--gold-border);background:var(--gold-bg)}
+.pin-cell.cursor{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+.num-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.5rem}
+.num-btn{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;font-size:16px;font-weight:500;color:var(--text);cursor:pointer;transition:all .15s;font-family:'Syne',sans-serif}
+.num-btn:hover{background:var(--border);border-color:var(--border2)}
+.num-btn:active{transform:scale(.96)}
+.num-btn.del{color:var(--text2);font-size:13px}
+.pass-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;font-size:14px;color:var(--text);font-family:'DM Mono',monospace;outline:none;margin-bottom:1.5rem;letter-spacing:.1em;transition:border-color .15s}
+.pass-input:focus{border-color:var(--gold)}
+.auth-btn{width:100%;background:var(--gold);border:none;border-radius:var(--radius);padding:14px;font-size:14px;font-weight:600;color:#0a0a0f;cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s;letter-spacing:.02em}
+.auth-btn:hover{background:var(--gold2)}
+.auth-btn:active{transform:scale(.98)}
+.auth-btn:disabled{opacity:.4;cursor:not-allowed}
+.auth-error{background:var(--red-bg);border:1px solid rgba(255,68,102,.25);border-radius:var(--radius);padding:10px 14px;font-size:12px;color:var(--red);font-family:'DM Mono',monospace;margin-bottom:1rem;display:none}
+.auth-error.on{display:block}
+.auth-progress{display:flex;gap:6px;margin-bottom:2rem;justify-content:center}
+.auth-dot{width:8px;height:8px;border-radius:50%;background:var(--border2);transition:all .3s}
+.auth-dot.done{background:var(--gold)}
+.auth-dot.active{background:var(--gold);box-shadow:0 0 0 3px var(--gold-border)}
+.first-run{background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:var(--radius);padding:12px 14px;font-size:11px;font-family:'DM Mono',monospace;color:var(--gold);margin-bottom:1.5rem;line-height:1.7}
+
+/* ── MAIN APP ── */
+#app{display:none;min-height:100vh}
+.app-nav{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0;position:sticky;top:0;z-index:100;overflow-x:auto;scrollbar-width:none}
+.app-nav::-webkit-scrollbar{display:none}
+.nav-brand{padding:0 20px;height:52px;display:flex;align-items:center;gap:8px;border-right:1px solid var(--border);flex-shrink:0;cursor:default}
+.nav-brand-name{font-size:14px;font-weight:700;color:var(--text);letter-spacing:.05em}
+.nav-brand-ver{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.nav-tab{height:52px;padding:0 16px;background:none;border:none;border-bottom:2px solid transparent;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap;font-family:'Syne',sans-serif;letter-spacing:.04em;text-transform:uppercase;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.nav-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.nav-tab:hover:not(.active){color:var(--text);background:rgba(255,255,255,.03)}
+.nav-right{margin-left:auto;padding:0 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.nav-lock{background:none;border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:11px;color:var(--text2);cursor:pointer;font-family:'DM Mono',monospace;transition:all .15s}
+.nav-lock:hover{border-color:var(--border2);color:var(--text)}
+.app-body{padding:24px;max-width:1100px;margin:0 auto}
+.sec{display:none}.sec.on{display:block}
+
+/* ── CARDS & GRID ── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px}
+.stat-label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px}
+.stat-val{font-size:26px;font-weight:700;color:var(--text);line-height:1}
+.stat-sub{font-size:11px;color:var(--text2);margin-top:4px;font-family:'DM Mono',monospace}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:16px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)}
+.btn{background:none;border:1px solid var(--border2);border-radius:var(--radius);padding:7px 14px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;letter-spacing:.04em;transition:all .15s;text-transform:uppercase}
+.btn:hover{border-color:var(--gold-border);color:var(--gold);background:var(--gold-bg)}
+.btn-gold{background:var(--gold-bg);border-color:var(--gold-border);color:var(--gold)}
+.btn-gold:hover{background:var(--gold);color:#0a0a0f}
+
+/* ── INPUTS ── */
+.input-row{display:flex;gap:8px;margin-bottom:12px}
+.inp{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--text);font-family:'DM Mono',monospace;outline:none;transition:border-color .15s;width:100%}
+.inp:focus{border-color:var(--gold)}
+.inp::placeholder{color:var(--text3)}
+select.inp{cursor:pointer}
+
+/* ── LIST ITEMS ── */
+.list{list-style:none;display:flex;flex-direction:column;gap:6px}
+.list-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg3);cursor:pointer;transition:all .15s}
+.list-item:hover{border-color:var(--border2)}
+.list-item.done{opacity:.4}
+.item-text{flex:1;font-size:13px;color:var(--text);line-height:1.4}
+.item-sub{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:2px}
+.badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;font-family:'DM Mono',monospace;flex-shrink:0;letter-spacing:.04em}
+.b-red{background:var(--red-bg);color:var(--red)}
+.b-amber{background:var(--amber-bg);color:var(--amber)}
+.b-green{background:var(--green-bg);color:var(--green)}
+.b-blue{background:var(--blue-bg);color:var(--blue)}
+.b-gold{background:var(--gold-bg);color:var(--gold)}
+.b-grey{background:rgba(255,255,255,.05);color:var(--text2)}
+.empty-state{text-align:center;padding:32px;color:var(--text3);font-size:12px;font-family:'DM Mono',monospace;border:1px dashed var(--border);border-radius:var(--radius)}
+
+/* ── PROGRESS ── */
+.prog-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.prog-label{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;width:150px;flex-shrink:0}
+.prog-track{flex:1;height:3px;border-radius:2px;background:var(--bg3);overflow:hidden}
+.prog-fill{height:100%;border-radius:2px;transition:width .4s ease}
+.prog-val{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;width:36px;text-align:right;flex-shrink:0}
+.prog-inp{width:64px;flex-shrink:0}
+
+/* ── FEED ── */
+.feed-item{padding:12px 14px;border-radius:var(--radius);border:1px solid var(--border);margin-bottom:6px;cursor:pointer;transition:all .15s;text-decoration:none;display:block}
+.feed-item:hover{border-color:var(--border2);background:rgba(255,255,255,.02)}
+.feed-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;font-family:'DM Mono',monospace;display:inline-block;margin-bottom:6px;letter-spacing:.04em}
+.feed-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;line-height:1.4}
+.feed-meta{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.filter-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:10px;font-weight:600;color:var(--text2);cursor:pointer;font-family:'DM Mono',monospace;letter-spacing:.06em;text-transform:uppercase;transition:all .15s}
+.filter-btn.active{border-color:var(--gold-border);color:var(--gold);background:var(--gold-bg)}
+
+/* ── AUDIT ── */
+.audit-score{font-size:48px;font-weight:700;color:var(--text);font-family:'DM Mono',monospace;margin-bottom:4px}
+.audit-verdict{font-size:12px;font-family:'DM Mono',monospace;margin-bottom:16px}
+.score-bar-lg{height:4px;border-radius:2px;background:var(--bg3);overflow:hidden;margin-bottom:20px}
+.score-fill-lg{height:100%;border-radius:2px;transition:all .4s ease}
+
+/* ── SETTINGS ── */
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.setting-row:last-child{border-bottom:none}
+.setting-label{font-size:13px;color:var(--text)}
+.setting-sub{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:2px}
+
+/* ── PRIVATE BANNER ── */
+.private-banner{background:rgba(201,168,76,.05);border:1px solid var(--gold-border);border-radius:var(--radius);padding:10px 14px;font-size:11px;color:var(--gold);font-family:'DM Mono',monospace;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* ── DIVIDER ── */
+.divider{height:1px;background:var(--border);margin:20px 0}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .app-body{padding:16px}
+  .auth-card{padding:1.5rem}
+  .auth-title{font-size:2rem}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .prog-label{width:110px}
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.fade-in{animation:fadeIn .3s ease forwards}
+.shake{animation:shake .35s ease}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ AUTH SCREEN ══════════════ -->
+<div id="auth">
+  <p class="auth-logo">Amin Irani · Private Platform</p>
+  <h1 class="auth-title">AIMOS</h1>
+  <p class="auth-sub">Management & Operations System</p>
+
+  <div class="auth-progress">
+    <div class="auth-dot active" id="dot1"></div>
+    <div class="auth-dot" id="dot2"></div>
+  </div>
+
+  <div class="auth-card" id="auth-card">
+
+    <!-- STEP 1: PIN -->
+    <div class="auth-step on" id="step-pin">
+      <div id="first-run-notice" class="first-run" style="display:none">
+        First run detected. Default PIN: <strong>1234</strong> · Default passphrase: <strong>aimos2026</strong><br>
+        Change both in Settings after login.
+      </div>
+      <p class="auth-label">Step 1 of 2 — Enter PIN</p>
+      <div class="pin-grid" id="pin-display">
+        <div class="pin-cell cursor" id="pc0"></div>
+        <div class="pin-cell" id="pc1"></div>
+        <div class="pin-cell" id="pc2"></div>
+        <div class="pin-cell" id="pc3"></div>
+      </div>
+      <div class="num-pad">
+        <button class="num-btn" onclick="pinKey('1')">1</button>
+        <button class="num-btn" onclick="pinKey('2')">2</button>
+        <button class="num-btn" onclick="pinKey('3')">3</button>
+        <button class="num-btn" onclick="pinKey('4')">4</button>
+        <button class="num-btn" onclick="pinKey('5')">5</button>
+        <button class="num-btn" onclick="pinKey('6')">6</button>
+        <button class="num-btn" onclick="pinKey('7')">7</button>
+        <button class="num-btn" onclick="pinKey('8')">8</button>
+        <button class="num-btn" onclick="pinKey('9')">9</button>
+        <button class="num-btn" onclick="pinKey('C')" style="font-size:11px;color:var(--text2)">CLR</button>
+        <button class="num-btn" onclick="pinKey('0')">0</button>
+        <button class="num-btn del" onclick="pinKey('DEL')">⌫</button>
+      </div>
+      <div class="auth-error" id="pin-error"></div>
+    </div>
+
+    <!-- STEP 2: PASSPHRASE -->
+    <div class="auth-step" id="step-pass">
+      <p class="auth-label">Step 2 of 2 — Enter passphrase</p>
+      <input class="pass-input" type="password" id="pass-input" placeholder="passphrase..." autocomplete="off" onkeydown="if(event.key==='Enter')verifyPass()">
+      <div class="auth-error" id="pass-error"></div>
+      <button class="auth-btn" onclick="verifyPass()">Unlock AIMOS</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════ MAIN APP ══════════════ -->
+<div id="app">
+  <nav class="app-nav">
+    <div class="nav-brand">
+      <div class="nav-dot"></div>
+      <span class="nav-brand-name">AIMOS</span>
+      <span class="nav-brand-ver">v1.0</span>
+    </div>
+    <button class="nav-tab active" onclick="showSec('job',this)">Job</button>
+    <button class="nav-tab" onclick="showSec('intel',this)">Private</button>
+    <button class="nav-tab" onclick="showSec('feed',this)">Learning</button>
+    <button class="nav-tab" onclick="showSec('biz',this)">Consulting</button>
+    <button class="nav-tab" onclick="showSec('audit',this)">Audit</button>
+    <button class="nav-tab" onclick="showSec('settings',this)">Settings</button>
+    <div class="nav-right">
+      <button class="nav-lock" onclick="lockApp()">Lock</button>
+    </div>
+  </nav>
+
+  <div class="app-body">
+
+    <!-- JOB -->
+    <div class="sec on" id="sec-job">
+      <div class="stat-grid">
+        <div class="stat-card"><p class="stat-label">Active projects</p><p class="stat-val" id="j-proj">—</p><p class="stat-sub">update in settings</p></div>
+        <div class="stat-card"><p class="stat-label">Compliance</p><p class="stat-val" id="j-comp">—</p><div style="height:3px;border-radius:2px;background:var(--bg3);overflow:hidden;margin-top:6px"><div id="j-comp-bar" style="height:100%;border-radius:2px;background:var(--green);width:0%;transition:width .4s"></div></div></div>
+        <div class="stat-card"><p class="stat-label">Open tasks</p><p class="stat-val" id="j-open">0</p><p class="stat-sub">across all projects</p></div>
+        <div class="stat-card"><p class="stat-label">90-day phase</p><p class="stat-val" id="j-day" style="font-size:18px;padding-top:4px">—</p><p class="stat-sub" id="j-phase">set start date in settings</p></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="card-title">Today's tasks</span><button class="btn btn-gold" onclick="openInClaude('Generate my priority task list as Company-wide Information Manager at a UK main contractor. Focus on: ISO 19650 compliance checks, CDE governance, BEP reviews, supply chain coordination, and team briefings. Make it actionable for today.')">Generate ↗</button></div>
+        <div class="input-row">
+          <input class="inp" id="task-in" type="text" placeholder="Add task...">
+          <select class="inp" id="task-pri" style="width:110px">
+            <option value="crit">Critical</option>
+            <option value="med" selected>Medium</option>
+            <option value="low">Low</option>
+          </select>
+          <button class="btn" onclick="addTask()">Add</button>
+        </div>
+        <ul class="list" id="task-list"></ul>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="card-title">ISO 19650 compliance tracker</span><button class="btn" onclick="openInClaude('Write a BIM compliance summary report for senior leadership based on my current tracker rates.')">Draft report ↗</button></div>
+        <div id="comp-progs">
+          <div class="prog-row"><span class="prog-label">Naming convention</span><div class="prog-track"><div class="prog-fill" id="cp1" style="width:0%;background:var(--green)"></div></div><span class="prog-val" id="cv1">0%</span><input class="inp prog-inp" type="range" min="0" max="100" value="0" step="5" oninput="setComp(1,this.value)"></div>
+          <div class="prog-row"><span class="prog-label">CDE workflow</span><div class="prog-track"><div class="prog-fill" id="cp2" style="width:0%;background:var(--green)"></div></div><span class="prog-val" id="cv2">0%</span><input class="inp prog-inp" type="range" min="0" max="100" value="0" step="5" oninput="setComp(2,this.value)"></div>
+          <div class="prog-row"><span class="prog-label">BEP coverage</span><div class="prog-track"><div class="prog-fill" id="cp3" style="width:0%;background:var(--green)"></div></div><span class="prog-val" id="cv3">0%</span><input class="inp prog-inp" type="range" min="0" max="100" value="0" step="5" oninput="setComp(3,this.value)"></div>
+          <div class="prog-row"><span class="prog-label">Supply chain assessed</span><div class="prog-track"><div class="prog-fill" id="cp4" style="width:0%;background:var(--blue)"></div></div><span class="prog-val" id="cv4">0%</span><input class="inp prog-inp" type="range" min="0" max="100" value="0" step="5" oninput="setComp(4,this.value)"></div>
+          <div class="prog-row"><span class="prog-label">COBie readiness</span><div class="prog-track"><div class="prog-fill" id="cp5" style="width:0%;background:var(--amber)"></div></div><span class="prog-val" id="cv5">0%</span><input class="inp prog-inp" type="range" min="0" max="100" value="0" step="5" oninput="setComp(5,this.value)"></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-gold" onclick="openInClaude('Run a full 360 BIM audit on my current project portfolio. Guide me step by step.')">Run 360 audit ↗</button>
+          <button class="btn" onclick="openInClaude('What are the top 3 ISO 19650 compliance risks for a UK main contractor with a new Information Manager in the first 30 days?')">Risk check ↗</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRIVATE INTEL -->
+    <div class="sec" id="sec-intel">
+      <div class="private-banner">
+        🔒 Private intelligence layer — visible only to you. Never mix real client data or project names here.
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><p class="stat-label">Insights logged</p><p class="stat-val" id="i-count">0</p></div>
+        <div class="stat-card"><p class="stat-label">Director readiness</p><p class="stat-val" id="i-ready">—</p></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Intelligence log</span><button class="btn btn-gold" onclick="openInClaude('Based on my role as Company-wide Information Manager at a UK main contractor, what intelligence should I be gathering in my first 90 days to position myself as BIM and AI Director?')">Brief me ↗</button></div>
+        <div class="input-row">
+          <input class="inp" id="intel-in" type="text" placeholder="Log a gap, opportunity, tool idea, or risk...">
+          <select class="inp" id="intel-cat" style="width:120px">
+            <option value="gap">Gap found</option>
+            <option value="opp">Opportunity</option>
+            <option value="tool">Tool idea</option>
+            <option value="risk">Risk</option>
+            <option value="case">Case study</option>
+            <option value="dir">Director track</option>
+          </select>
+          <button class="btn" onclick="addIntel()">Log</button>
+        </div>
+        <div id="intel-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Director readiness tracker</span></div>
+        <div class="prog-row"><span class="prog-label">ISO 19650 authority</span><div class="prog-track"><div class="prog-fill" id="dr1" style="width:85%;background:var(--green)"></div></div><span class="prog-val">85%</span></div>
+        <div class="prog-row"><span class="prog-label">AI & automation</span><div class="prog-track"><div class="prog-fill" id="dr2" style="width:55%;background:var(--amber)"></div></div><span class="prog-val">55%</span></div>
+        <div class="prog-row"><span class="prog-label">Business case writing</span><div class="prog-track"><div class="prog-fill" id="dr3" style="width:40%;background:var(--amber)"></div></div><span class="prog-val">40%</span></div>
+        <div class="prog-row"><span class="prog-label">Consulting IP packaged</span><div class="prog-track"><div class="prog-fill" id="dr4" style="width:20%;background:var(--red)"></div></div><span class="prog-val">20%</span></div>
+        <div class="prog-row"><span class="prog-label">Network & visibility</span><div class="prog-track"><div class="prog-fill" id="dr5" style="width:30%;background:var(--red)"></div></div><span class="prog-val">30%</span></div>
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-gold" onclick="openInClaude('What is the gap between Information Manager and BIM & AI Director at a UK main contractor? Give me a detailed skills and experience gap analysis.')">Gap analysis ↗</button>
+          <button class="btn" onclick="openInClaude('Write a private 24-month development plan for Amin Irani to reach BIM and AI Director level, starting from Company-wide Information Manager. Include specific milestones, skills to develop, and visibility strategies.')">24-month plan ↗</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEARNING FEED -->
+    <div class="sec" id="sec-feed">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Learning feed</span><button class="btn btn-gold" onclick="openInClaude('Give me the 5 most important developments in the last 30 days across: ISO 19650 UK updates, AI in BIM, Autodesk platform changes, UK construction technology, and BIM consultancy market. For each: headline, 2-sentence summary, and what it means for an Information Manager.')">Get latest ↗</button></div>
+        <div class="filter-row" id="feed-filters">
+          <button class="filter-btn active" onclick="filterFeed('all',this)">All</button>
+          <button class="filter-btn" onclick="filterFeed('iso',this)">ISO 19650</button>
+          <button class="filter-btn" onclick="filterFeed('ai',this)">AI & BIM</button>
+          <button class="filter-btn" onclick="filterFeed('tool',this)">Tools</button>
+          <button class="filter-btn" onclick="filterFeed('biz',this)">Business</button>
+          <button class="filter-btn" onclick="filterFeed('sec',this)">Security</button>
+        </div>
+        <div id="feed-list"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+          <button class="btn" onclick="openInClaude('What are the top 5 tools a BIM and AI Director should master in 2026? For each: what it does, why it matters, and the fastest free way to learn it.')">Top tools 2026 ↗</button>
+          <button class="btn" onclick="openInClaude('Teach me one thing about AI applied to BIM that most Information Managers do not know yet. Make it practical with a real workflow example.')">Teach me ↗</button>
+          <button class="btn" onclick="openInClaude('What are the most common ISO 19650 compliance failures on UK construction projects in 2025-2026? Give me the top 5 with root causes and fixes.')">Common failures ↗</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONSULTING -->
+    <div class="sec" id="sec-biz">
+      <div class="stat-grid">
+        <div class="stat-card"><p class="stat-label">Pipeline</p><p class="stat-val" id="b-pipe">£0</p><p class="stat-sub">estimated value</p></div>
+        <div class="stat-card"><p class="stat-label">Active leads</p><p class="stat-val" id="b-leads">0</p></div>
+        <div class="stat-card"><p class="stat-label">IP assets</p><p class="stat-val">4</p><p class="stat-sub">RRL-Touch, 360, UAPGES, SB</p></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Consulting pipeline</span></div>
+        <div class="input-row">
+          <input class="inp" id="lead-name" type="text" placeholder="Client or opportunity...">
+          <input class="inp" id="lead-val" type="number" placeholder="£ value" style="width:110px">
+          <select class="inp" id="lead-stage" style="width:110px">
+            <option value="prospect">Prospect</option>
+            <option value="warm">Warm</option>
+            <option value="proposal">Proposal</option>
+            <option value="active">Active</option>
+          </select>
+          <button class="btn" onclick="addLead()">Add</button>
+        </div>
+        <ul class="list" id="lead-list"></ul>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-gold" onclick="openInClaude('Write a one-page service sheet for Amin Irani BIM Tech Design + Consulting. Services: BIM Audit £3K-£8K, EIR writing £1.5K-£4K, ISO 19650 compliance programme £2K-£5K/month, BIM setup £600-900/day, custom Revit plugin development £2K-£10K, BIM training £1.5K-£3K/day.')">Service sheet ↗</button>
+          <button class="btn" onclick="openInClaude('Write a cold outreach email to a UK main contractor BIM Manager offering a BIM audit and compliance improvement service. Brand: Amin Irani BIM Tech Design + Consulting. Tone: peer-to-peer, technical, not salesy.')">Outreach email ↗</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">IP development tracker</span></div>
+        <ul class="list">
+          <li class="list-item"><div class="item-text"><p style="font-size:13px;font-weight:500;color:var(--text)">RRL-Touch</p><p class="item-sub">Tablet review interface · Power Apps + Dynamo · Proposal stage</p></div><span class="badge b-amber">In dev</span></li>
+          <li class="list-item"><div class="item-text"><p style="font-size:13px;font-weight:500;color:var(--text)">360 Audit Framework</p><p class="item-sub">BIM maturity evaluation system · Built · Needs packaging</p></div><span class="badge b-green">Built</span></li>
+          <li class="list-item"><div class="item-text"><p style="font-size:13px;font-weight:500;color:var(--text)">UAPGES</p><p class="item-sub">AI + BIM + Game Engines · Timestamped 2025 · Licensing stage</p></div><span class="badge b-gold">IP secured</span></li>
+          <li class="list-item"><div class="item-text"><p style="font-size:13px;font-weight:500;color:var(--text)">Sheet Browser (C#)</p><p class="item-sub">Revit plugin · Functional · App Store packaging needed</p></div><span class="badge b-blue">Functional</span></li>
+        </ul>
+        <div style="margin-top:12px">
+          <button class="btn" onclick="openInClaude('How do I list a Revit plugin on the Autodesk App Store? What are the requirements, costs, and steps?')">App Store guide ↗</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 360 AUDIT -->
+    <div class="sec" id="sec-audit">
+      <div class="card">
+        <div class="card-head"><span class="card-title">360 project audit</span></div>
+        <div class="input-row">
+          <input class="inp" id="audit-name" type="text" placeholder="Project type or description (anonymised)...">
+          <button class="btn btn-gold" onclick="initAudit()">Start audit</button>
+        </div>
+        <div id="audit-body" style="display:none">
+          <div class="divider"></div>
+          <div id="audit-dims-list"></div>
+          <div class="divider"></div>
+          <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:16px">
+            <div><p class="audit-score" id="a-score">0<span style="font-size:20px;color:var(--text2)">/100</span></p><p class="audit-verdict" id="a-verdict" style="color:var(--text2)">Score each dimension above</p></div>
+            <div style="flex:1;min-width:200px"><div class="score-bar-lg"><div class="score-fill-lg" id="a-bar" style="width:0%;background:var(--red)"></div></div></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-gold" onclick="generateScenarios()">Generate scenarios ↗</button>
+            <button class="btn" onclick="openInClaude('What are the highest-ROI quick wins for a BIM Information Manager in the first 30 days at a new UK main contractor? Focus on ISO 19650 compliance and CDE governance.')">Quick wins ↗</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="sec" id="sec-settings">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Security</span></div>
+        <div class="setting-row">
+          <div><p class="setting-label">Change PIN</p><p class="setting-sub">4-digit access code</p></div>
+          <button class="btn" onclick="changePin()">Change</button>
+        </div>
+        <div class="setting-row">
+          <div><p class="setting-label">Change passphrase</p><p class="setting-sub">Second factor passphrase</p></div>
+          <button class="btn" onclick="changePass()">Change</button>
+        </div>
+        <div class="setting-row">
+          <div><p class="setting-label">Auto-lock</p><p class="setting-sub">Lock after browser tab closes</p></div>
+          <span class="badge b-green" style="font-size:11px">Active</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Profile</span></div>
+        <div class="setting-row">
+          <div><p class="setting-label">Start date (90-day plan)</p><p class="setting-sub">First day at new role</p></div>
+          <input class="inp" type="date" id="start-date-inp" style="width:160px" onchange="saveStartDate(this.value)">
+        </div>
+        <div class="setting-row">
+          <div><p class="setting-label">Active projects</p><p class="setting-sub">Number across portfolio</p></div>
+          <input class="inp" type="number" id="proj-inp" min="0" value="0" style="width:80px" onchange="saveProj(this.value)">
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Work PC safe usage</span></div>
+        <div style="font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;line-height:1.9">
+          <p>✓ &nbsp;AIMOS runs entirely in your browser — no software installed</p>
+          <p>✓ &nbsp;If asked: "I use Claude.ai for BIM standards research and document drafting"</p>
+          <p>✓ &nbsp;Never paste real client names, project refs, or contract values</p>
+          <p>✓ &nbsp;Use anonymised descriptions only — "Project A" not actual names</p>
+          <p>✓ &nbsp;Lock before leaving your desk (Lock button, top right)</p>
+          <p>✓ &nbsp;Session clears automatically when browser tab closes</p>
+          <p>⚠ &nbsp;Check your employer's acceptable use policy before use on work devices</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Data</span></div>
+        <div class="setting-row">
+          <div><p class="setting-label">Clear all data</p><p class="setting-sub">Removes tasks, intel, pipeline. Cannot be undone.</p></div>
+          <button class="btn" style="border-color:rgba(255,68,102,.3);color:var(--red)" onclick="clearAll()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const STORE_KEY='aimos_v1';
+const DEFAULT_PIN='1234';
+const DEFAULT_PASS='aimos2026';
+
+function hash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)^s.charCodeAt(i);return(h>>>0).toString(36)}
+
+function load(){try{return JSON.parse(localStorage.getItem(STORE_KEY))||{}}catch{return{}}}
+function save(d){localStorage.setItem(STORE_KEY,JSON.stringify(d))}
+function get(k){return load()[k]}
+function set(k,v){const d=load();d[k]=v;save(d)}
+
+let pinBuf='',attempts=0,locked=false,authStage=1;
+
+function initAuth(){
+  const d=load();
+  if(!d.pin){set('pin',hash(DEFAULT_PIN));set('pass',hash(DEFAULT_PASS));document.getElementById('first-run-notice').style.display='block'}
+}
+
+function pinKey(k){
+  if(locked)return;
+  if(k==='C'){pinBuf=''}
+  else if(k==='DEL'){pinBuf=pinBuf.slice(0,-1)}
+  else if(pinBuf.length<4){pinBuf+=k}
+  renderPin();
+  if(pinBuf.length===4)setTimeout(verifyPin,120);
+}
+
+function renderPin(){
+  for(let i=0;i<4;i++){
+    const c=document.getElementById('pc'+i);
+    c.textContent=i<pinBuf.length?'●':'';
+    c.className='pin-cell'+(i<pinBuf.length?' filled':'')+(i===pinBuf.length?' cursor':'');
+  }
+}
+
+function verifyPin(){
+  if(hash(pinBuf)===get('pin')){
+    document.getElementById('step-pin').classList.remove('on');
+    document.getElementById('step-pass').classList.add('on');
+    document.getElementById('dot1').classList.remove('active');
+    document.getElementById('dot1').classList.add('done');
+    document.getElementById('dot2').classList.add('active');
+    authStage=2;
+    setTimeout(()=>document.getElementById('pass-input').focus(),100);
+  }else{
+    attempts++;
+    showErr('pin-error','Incorrect PIN. '+(3-attempts)+' attempts remaining.');
+    document.getElementById('auth-card').classList.add('shake');
+    setTimeout(()=>document.getElementById('auth-card').classList.remove('shake'),400);
+    pinBuf='';renderPin();
+    if(attempts>=3){lockout()}
+  }
+}
+
+function verifyPass(){
+  const p=document.getElementById('pass-input').value;
+  if(hash(p)===get('pass')){
+    document.getElementById('auth').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('app').classList.add('fade-in');
+    loadApp();
+  }else{
+    attempts++;
+    showErr('pass-error','Incorrect passphrase. '+(3-attempts)+' attempts remaining.');
+    document.getElementById('pass-input').value='';
+    if(attempts>=3){lockout()}
+  }
+}
+
+function showErr(id,msg){
+  const el=document.getElementById(id);
+  el.textContent=msg;el.classList.add('on');
+  setTimeout(()=>el.classList.remove('on'),3000);
+}
+
+function lockout(){
+  locked=true;
+  showErr('pin-error','Too many attempts. Locked for 30 seconds.');
+  setTimeout(()=>{locked=false;attempts=0;pinBuf='';renderPin();},30000);
+}
+
+function lockApp(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('auth').style.display='flex';
+  document.getElementById('step-pin').classList.add('on');
+  document.getElementById('step-pass').classList.remove('on');
+  document.getElementById('dot1').className='auth-dot active';
+  document.getElementById('dot2').className='auth-dot';
+  document.getElementById('pass-input').value='';
+  pinBuf='';renderPin();authStage=1;
+}
+
+function changePin(){
+  const np=prompt('Enter new 4-digit PIN:');
+  if(np&&/^\d{4}$/.test(np)){set('pin',hash(np));alert('PIN updated.');}
+  else if(np){alert('PIN must be exactly 4 digits.');}
+}
+function changePass(){
+  const np=prompt('Enter new passphrase:');
+  if(np&&np.length>=4){set('pass',hash(np));alert('Passphrase updated.');}
+  else if(np){alert('Passphrase must be at least 4 characters.');}
+}
+
+function showSec(id,btn){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('on');
+  btn.classList.add('active');
+}
+
+function openInClaude(prompt){
+  window.open('https://claude.ai/new?q='+encodeURIComponent(prompt),'_blank');
+}
+
+const feedData=[
+  {cat:'iso',tag:'ISO 19650',title:'UK BIM Framework updated guidance on LOIN tables — key changes for IMs',meta:'UK BIM Framework · recent'},
+  {cat:'ai',tag:'AI & BIM',title:'LLMs used to auto-generate BEP content from EIR inputs — early results',meta:'BIM+AI Research · recent'},
+  {cat:'tool',tag:'Tools',title:'Autodesk ACC new API endpoints enabling CDE audit automation',meta:'Autodesk Dev Blog · recent'},
+  {cat:'iso',tag:'ISO 19650',title:'COBie 3.0 draft published — what information managers need to prepare for',meta:'BSI · recent'},
+  {cat:'ai',tag:'AI & BIM',title:'AI-assisted clash detection benchmarked against Navisworks manual review',meta:'Construction Tech Review · recent'},
+  {cat:'biz',tag:'Business',title:'BIM consultancy rate benchmarks for UK market — 2026 survey data',meta:'RICS · recent'},
+  {cat:'tool',tag:'Tools',title:'Dynamo 3.0 new nodes for ISO 19650 naming convention validation',meta:'Dynamo Blog · recent'},
+  {cat:'sec',tag:'Security',title:'ISO 19650-5 security tier implementation guide for UK contractors',meta:'BSI · recent'},
+  {cat:'biz',tag:'Business',title:'Information Manager to Director career paths at UK contractors',meta:'CIOB · recent'},
+  {cat:'ai',tag:'AI & BIM',title:'Prompt engineering for BIM compliance checking — a practical guide',meta:'BIM Tech community · recent'},
+];
+let feedFilter='all';
+
+function filterFeed(cat,btn){
+  feedFilter=cat;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFeed();
+}
+function renderFeed(){
+  const el=document.getElementById('feed-list');
+  const items=feedFilter==='all'?feedData:feedData.filter(f=>f.cat===feedFilter);
+  const tc={iso:'background:rgba(68,136,255,.15);color:#88aaff',ai:'background:rgba(255,170,68,.15);color:#ffaa44',tool:'background:rgba(68,204,136,.15);color:#44cc88',biz:'background:rgba(201,168,76,.15);color:#c9a84c',sec:'background:rgba(255,68,102,.15);color:#ff4466'};
+  el.innerHTML=items.map(f=>`<div class="feed-item" onclick="openInClaude('Give me a practical briefing on this topic for my role as Company-wide Information Manager at a UK main contractor: ${f.title}. Include: what changed, why it matters, and one concrete action I should take.')"><span class="feed-tag" style="${tc[f.cat]||''}">${f.tag}</span><p class="feed-title">${f.title}</p><p class="feed-meta">${f.meta}</p></div>`).join('');
+}
+
+const auditDims=['BIM maturity & ISO 19650','Workflow & automation gaps','Technology stack & tools','ROI & commercial value','Security & governance'];
+let auditVals=[0,0,0,0,0];
+
+function initAudit(){
+  const name=document.getElementById('audit-name').value.trim();
+  if(!name)return;
+  document.getElementById('audit-body').style.display='block';
+  const el=document.getElementById('audit-dims-list');
+  el.innerHTML=auditDims.map((d,i)=>`<div class="prog-row"><span class="prog-label" style="width:200px;font-size:11px">${d}</span><div class="prog-track"><div class="prog-fill" id="af${i}" style="width:0%;background:var(--green)"></div></div><span class="prog-val" id="av${i}">0</span><span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin:0 4px">/20</span><input class="inp prog-inp" type="range" min="0" max="20" value="0" step="1" oninput="setAuditDim(${i},this.value)"></div>`).join('');
+  updateAuditTotal();
+}
+function setAuditDim(i,v){
+  auditVals[i]=parseInt(v);
+  document.getElementById('af'+i).style.width=(v/20*100)+'%';
+  document.getElementById('av'+i).textContent=v;
+  updateAuditTotal();
+}
+function updateAuditTotal(){
+  const total=auditVals.reduce((a,b)=>a+b,0);
+  document.getElementById('a-score').innerHTML=total+'<span style="font-size:20px;color:var(--text2)">/100</span>';
+  document.getElementById('a-bar').style.width=total+'%';
+  const col=total<40?'var(--red)':total<60?'var(--amber)':total<80?'var(--blue)':'var(--green)';
+  document.getElementById('a-bar').style.background=col;
+  const v=['Score each dimension above','Critical — immediate intervention required','Developing — structured programme needed','Functional — targeted optimisation available','Advanced — optimise for scale and handover','Exemplary — market-leading BIM practice'];
+  const vi=total===0?0:total<40?1:total<60?2:total<75?3:total<90?4:5;
+  document.getElementById('a-verdict').textContent=v[vi];
+  document.getElementById('a-verdict').style.color=col;
+}
+function generateScenarios(){
+  const name=document.getElementById('audit-name').value.trim()||'this project';
+  const scores=auditDims.map((d,i)=>d+': '+auditVals[i]+'/20').join(', ');
+  openInClaude('Generate three improvement scenarios for '+name+'. 360 Audit scores: '+scores+'. For each scenario (Quick Win 30 days, Structured Uplift 6 months, Transformation 24 months): specific actions, estimated effort, expected ROI, and first step to take tomorrow.');
+}
+
+let tasks=[],intelLog=[],leads=[];
+
+function addTask(){
+  const v=document.getElementById('task-in').value.trim();
+  if(!v)return;
+  tasks.push({text:v,pri:document.getElementById('task-pri').value,done:false,id:Date.now()});
+  document.getElementById('task-in').value='';
+  renderTasks();saveTasks();
+}
+function toggleTask(id){const t=tasks.find(t=>t.id===id);if(t){t.done=!t.done;renderTasks();saveTasks();}}
+function renderTasks(){
+  const el=document.getElementById('task-list');
+  if(!tasks.length){el.innerHTML='<div class="empty-state">No tasks — add one or generate ↗</div>';return;}
+  const bc={crit:'b-red',med:'b-amber',low:'b-green'};
+  const bl={crit:'Critical',med:'Medium',low:'Low'};
+  el.innerHTML=tasks.map(t=>`<li class="list-item${t.done?' done':''}" onclick="toggleTask(${t.id})"><div class="item-text">${t.text}</div><span class="badge ${bc[t.pri]}">${bl[t.pri]}</span></li>`).join('');
+  document.getElementById('j-open').textContent=tasks.filter(t=>!t.done).length;
+}
+function saveTasks(){set('tasks',tasks)}
+
+function addIntel(){
+  const v=document.getElementById('intel-in').value.trim();
+  if(!v)return;
+  intelLog.unshift({text:v,cat:document.getElementById('intel-cat').value,id:Date.now()});
+  document.getElementById('intel-in').value='';
+  renderIntel();saveIntel();
+}
+function renderIntel(){
+  const el=document.getElementById('intel-list');
+  if(!intelLog.length){el.innerHTML='<div class="empty-state">Log your first insight — gaps, opportunities, risks, tool ideas</div>';return;}
+  const cc={gap:'b-red',opp:'b-green',tool:'b-blue',risk:'b-amber',case:'b-gold',dir:'b-grey'};
+  const cl={gap:'Gap',opp:'Opportunity',tool:'Tool idea',risk:'Risk',case:'Case study',dir:'Director track'};
+  el.innerHTML=intelLog.map(i=>`<div class="list-item"><div class="item-text">${i.text}</div><span class="badge ${cc[i.cat]}">${cl[i.cat]}</span></div>`).join('');
+  document.getElementById('i-count').textContent=intelLog.length;
+}
+function saveIntel(){set('intel',intelLog)}
+
+function addLead(){
+  const name=document.getElementById('lead-name').value.trim();
+  const val=parseInt(document.getElementById('lead-val').value)||0;
+  const stage=document.getElementById('lead-stage').value;
+  if(!name)return;
+  leads.push({name,val,stage,id:Date.now()});
+  document.getElementById('lead-name').value='';
+  document.getElementById('lead-val').value='';
+  renderLeads();saveLeads();
+}
+function renderLeads(){
+  const el=document.getElementById('lead-list');
+  if(!leads.length){el.innerHTML='<li class="empty-state">No leads — add your first prospect</li>';return;}
+  const sc={prospect:'b-grey',warm:'b-amber',proposal:'b-blue',active:'b-green'};
+  el.innerHTML=leads.map(l=>`<li class="list-item"><div class="item-text">${l.name}<p class="item-sub">£${l.val.toLocaleString()}</p></div><span class="badge ${sc[l.stage]}">${l.stage}</span></li>`).join('');
+  document.getElementById('b-leads').textContent=leads.length;
+  document.getElementById('b-pipe').textContent='£'+leads.reduce((a,b)=>a+b.val,0).toLocaleString();
+}
+function saveLeads(){set('leads',leads)}
+
+function setComp(n,v){
+  document.getElementById('cp'+n).style.width=v+'%';
+  document.getElementById('cv'+n).textContent=v+'%';
+  const vals=[1,2,3,4,5].map(i=>parseInt(document.getElementById('cv'+i).textContent)||0);
+  const avg=Math.round(vals.reduce((a,b)=>a+b,0)/5);
+  document.getElementById('j-comp').textContent=avg+'%';
+  document.getElementById('j-comp-bar').style.width=avg+'%';
+  set('comp',[1,2,3,4,5].map(i=>parseInt(document.getElementById('cv'+i).textContent)||0));
+}
+
+function saveStartDate(v){
+  set('startDate',v);
+  updateDayCount();
+}
+function updateDayCount(){
+  const sd=get('startDate');
+  if(!sd){document.getElementById('j-day').textContent='—';return;}
+  const diff=Math.floor((new Date()-new Date(sd))/(1000*60*60*24))+1;
+  document.getElementById('j-day').textContent='Day '+Math.max(1,diff);
+  const phase=diff<=30?'Orient & audit':diff<=60?'Establish & standardise':'Lead & innovate';
+  document.getElementById('j-phase').textContent=phase;
+}
+function saveProj(v){set('projCount',v);document.getElementById('j-proj').textContent=v}
+
+function clearAll(){
+  if(!confirm('Clear all data? This cannot be undone.'))return;
+  const d=load();
+  delete d.tasks;delete d.intel;delete d.leads;delete d.comp;delete d.startDate;delete d.projCount;
+  save(d);loadApp();
+}
+
+function loadApp(){
+  tasks=get('tasks')||[];
+  intelLog=get('intel')||[];
+  leads=get('leads')||[];
+  renderTasks();renderIntel();renderLeads();renderFeed();updateDayCount();
+  const comp=get('comp')||[0,0,0,0,0];
+  comp.forEach((v,i)=>{
+    if(document.getElementById('cp'+(i+1))){
+      document.getElementById('cp'+(i+1)).style.width=v+'%';
+      document.getElementById('cv'+(i+1)).textContent=v+'%';
+    }
+  });
+  const avg=Math.round(comp.reduce((a,b)=>a+b,0)/5);
+  document.getElementById('j-comp').textContent=avg?avg+'%':'—';
+  document.getElementById('j-comp-bar').style.width=avg+'%';
+  const pc=get('projCount')||'—';
+  document.getElementById('j-proj').textContent=pc;
+  document.getElementById('proj-inp').value=pc==='—'?0:pc;
+  const sd=get('startDate');
+  if(sd)document.getElementById('start-date-inp').value=sd;
+  document.getElementById('i-count').textContent=intelLog.length;
+}
+
+initAuth();
+</script>
+</body>
+</html>
